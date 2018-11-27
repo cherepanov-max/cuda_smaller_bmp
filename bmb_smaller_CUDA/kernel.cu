@@ -53,48 +53,24 @@ px_arr reading(int dimensions1, int dimensions2, ifstream &file) {
 	return old;
 }
 
-px_arr small_width(px_arr old, int dimensions1, int dimensions2, int new_width) {
-	int dop = 4 - dimensions1 % 4;
-	if (dop == 4) {
-		dop = 0;
-	}
-
-	int null = 0;
-
-	px_arr young;
-	young.r = new unsigned int[new_width * dimensions2];
-	young.g = new unsigned int[new_width * dimensions2];
-	young.b = new unsigned int[new_width * dimensions2];
-
-
-	for (int i = 0; i < dimensions2; i++) {
+void small_width(unsigned int *r, unsigned int *g, unsigned int *b, int width, int height, int new_width, unsigned int *yr, unsigned int *yg, unsigned int *yb) {
+	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < new_width; j++) {
-			young.r[new_width * i + j] = old.r[(int)round(((float)dimensions1 / (float)new_width) * j + dimensions1 * i)];
-			young.g[new_width * i + j] = old.g[(int)round(((float)dimensions1 / (float)new_width) * j + dimensions1 * i)];
-			young.b[new_width * i + j] = old.b[(int)round(((float)dimensions1 / (float)new_width) * j + dimensions1 * i)];
+			yr[new_width * i + j] = r[(int)round(((float)width / (float)new_width) * j + width * i)];
+			yg[new_width * i + j] = g[(int)round(((float)width / (float)new_width) * j + width * i)];
+			yb[new_width * i + j] = b[(int)round(((float)width / (float)new_width) * j + width * i)];
 		}
 	}
-
-
-
-	return young;
 }
 
-px_arr small_height(px_arr old, int new_width, int dimensions2, int new_height) {
-	px_arr young;
-	young.r = new unsigned int[new_height * new_width];
-	young.g = new unsigned int[new_height * new_width];
-	young.b = new unsigned int[new_height * new_width];
-
+void small_height(unsigned int *r, unsigned int *g, unsigned int *b, int new_width, int height, int new_height, unsigned int *yr, unsigned int *yg, unsigned int *yb) {
 	for (int i = 0; i < new_height; i++) {
 		for (int j = 0; j < new_width; j++) {
-			young.r[new_width * i + j] = old.r[(int)round(((float)dimensions2 / (float)new_height) * i) * new_width + j];
-			young.g[new_width * i + j] = old.g[(int)round(((float)dimensions2 / (float)new_height) * i) * new_width + j];
-			young.b[new_width * i + j] = old.b[(int)round(((float)dimensions2 / (float)new_height) * i) * new_width + j];
+			yr[new_width * i + j] = r[(int)round(((float)height / (float)new_height) * i) * new_width + j];
+			yg[new_width * i + j] = g[(int)round(((float)height / (float)new_height) * i) * new_width + j];
+			yb[new_width * i + j] = b[(int)round(((float)height / (float)new_height) * i) * new_width + j];
 		}
 	}
-
-	return young;
 }
 
 void writing(px_arr young, int new_height, ofstream &os, int new_width) {
@@ -155,7 +131,7 @@ int main(int argc, char **argv)
 	//двигаемся в зону цветов пикселей
 	file.seekg(pixels_adress, ios::beg);
 
-	float new_width, new_height;
+	int new_width, new_height;
 	std::cout << "новая ширина изображения в пикселях (меньше текушей и делится на 4)" << endl;
 	std::cin >> new_width;
 	std::cout << endl;
@@ -196,9 +172,16 @@ int main(int argc, char **argv)
 	os.write(reinterpret_cast<char*>(&impColors), sizeof(impColors));
 
 	px_arr old, young_w, young_wh;
+	young_w.r = new unsigned int[height * new_width];
+	young_w.g = new unsigned int[height * new_width];
+	young_w.b = new unsigned int[height * new_width];
+	young_wh.r = new unsigned int[new_height * new_width];
+	young_wh.g = new unsigned int[new_height * new_width];
+	young_wh.b = new unsigned int[new_height * new_width];
 	old = reading(width, height, file);
-	young_w = small_width(old, width, height, new_width);
-	young_wh = small_height(young_w, new_width, height, new_height);
+	small_width(old.r, old.g, old.b, width, height, new_width, young_w.r, young_w.g, young_w.b);
+
+	small_height(young_w.r, young_w.g, young_w.b, new_width, height, new_height, young_wh.r, young_wh.g, young_wh.b);
 	writing(young_wh, new_height, os, new_width);
 
 	os.close();
